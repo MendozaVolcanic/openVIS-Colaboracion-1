@@ -98,28 +98,29 @@ This experience was important to see how reproducible the
 results could be,
 and how to improve the overall functionality for broader use.
 
-The bulk of this methodology has been documented in:
+_Note: none of this code or the writing was made with LLM/genAI tools. We thrive for reproducible research, want to acknowledge the efforts of all previous developments in the methodology, and hope this code is used following those principles as well._
+
+## How to cite 
+
+### Minimum citation
+
+Please _at least_ this repository as:
+- [De Negri L., R. S., Gheri, D., Hupe, P., Marchetti, E., Näsholm, S. P., Le Pichon, A., Labazuy, P., & Walsh, B. (2026). The Volcanic Information System. Zenodo. https://doi.org/10.5281/zenodo.18509779](https://doi.org/10.5281/zenodo.18509779)
+
+We _strongly_ suggest to cite the paper linked with this repository as well,
+where the methodology is explained, tested, and discussed:
+- [De Negri et al. (2026, in review)]()
+
+Additionally, please note that the bulk of this methodology has been documented in:
 - [Marchetti et al. (2019)](https://doi.org/10.1038/s41598-019-54468-5): IP long-range (>500 km) development and test on Etna volcano, Italy.
 - [Gheri et al. (2023)](https://doi.org/10.1016/j.jvolgeores.2023.107753): use of IP from IS06 to characterize volcanic eruptions in Indonesia (~1000-2000 km).
 - [Gheri et al. (2025)](https://doi.org/10.1016/j.jvolgeores.2025.108320): first global, systematic use of VIS methodology with historical data (2010-2019) from infrasound stations at ~1000-2000 km from active volcanoes.
  
-Other important parts as well in:
+Other important parts are as well in:
 - [Le Pichon et al., (2012)](https://doi.org/10.1029/2011JD016670): the attenuation coefficient formula, implemented in this code.
 - [Ripepe et al. (2018)](https://doi.org/10.1029/2018JB015561): first use of IP idea and tests with local data from Etna, Italy.
 - [De Negri and Matoza (2023)](https://doi.org/10.1029/2022JB025735): release or ARCADE methodology and test with 2011 Cordón Caulle and 2015 Calbuco eruptions, Chile.
 - [De Negri et al. (2025)](https://doi.org/10.1093/gji/ggaf027): ARCADE methodology applied to multi-year datasets to test temporal resolution on volcanoes from the Vanuatu Archipelago.
-
-The updated methodology behind this code has been documented in [De Negri et al. (2026, in review)]().
-
-_Note: none of this code or the writing was made with LLM/genAI tools. We thrive for reproducible research, want to acknowledge the efforts of all previous developments in the methodology, and hope this code is used following those principles as well._
-
-## How to cite
-
-Please cite as part of the following paper:
-- [De Negri et al. (2026, in review)]()
-
-and as the Zenodo repository as well:
-- [De Negri L., R. S., Gheri, D., Hupe, P., Marchetti, E., Näsholm, S. P., Le Pichon, A., Labazuy, P., & Walsh, B. (2026). The Volcanic Information System. Zenodo. https://doi.org/10.5281/zenodo.18509779](https://doi.org/10.5281/zenodo.18509779)
 
 ## How to use
 
