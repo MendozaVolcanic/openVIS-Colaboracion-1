@@ -17,9 +17,15 @@ Convención de nombres (openVIS):
 """
 
 import argparse
+import io
 import sys
 import time
 from pathlib import Path
+
+# Forzar UTF-8 en Windows (evita errores con símbolos en la consola)
+if sys.platform == "win32":
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
 
 try:
     import requests
