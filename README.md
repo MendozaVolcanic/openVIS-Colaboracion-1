@@ -4,6 +4,66 @@ Open source implementation of the Volcanic Information System methodology
 ![Workflow of the VIS methodology](./figures/vis_diagram.png)
 _Workflow of the VIS methodology. Figure from [De Negri et al. (2026, in review)]()._
 
+---
+
+## OVDAS Adaptation — Observatorio Volcanológico de los Andes del Sur
+
+> **Fork:** [MendozaVolcanic/openVIS-Colaboracion-1](https://github.com/MendozaVolcanic/openVIS-Colaboracion-1)
+> **Institution:** OVDAS, SERNAGEOMIN, Chile
+> **Contact:** Nicolás Mendoza — OVDAS
+
+This fork adapts openVIS for operational volcano monitoring at OVDAS (Observatorio Volcanológico de los Andes del Sur, SERNAGEOMIN, Chile), the volcanic monitoring network responsible for the Southern Andes volcanic arc.
+
+### What we have done
+
+- **Interactive dashboard** (`dashboard.py`): Streamlit + Plotly app for exploring VIS results — time series of IP by station, IMS station network map, eruption table with confidence levels, per-station statistics, and configurable filters (date range, IP threshold, stations). [![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://share.streamlit.io/mendozavolcanic/openvis-colaboracion-1/main/dashboard.py)
+- **BGR bulletin downloader** (`scripts/download_bgr.py`): Python script to fetch IMS open-access NetCDF bulletins (Hupe et al., 2022) for selected stations and years — preconfigured for the 2015 Calbuco eruption (IS02, IS08, IS13, IS14, IS41).
+- **Papers review**: Technical summaries of all key references (Marchetti 2019, Ripepe 2018, De Negri & Matoza 2023, Le Pichon 2012, Gheri 2025, and others) with operational implications for OVDAS monitoring distances (100–500 km vs. global 500–2000 km range in published studies).
+- **OVDAS adaptation roadmap**: Gap analysis identifying missing components (real-time ingestion, local PMCC adapter, alert system, database).
+
+### Dashboard
+
+[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://share.streamlit.io/mendozavolcanic/openvis-colaboracion-1/main/dashboard.py)
+
+Launch locally:
+
+```bash
+cd openVIS-Colaboracion-1
+pip install streamlit plotly pandas
+streamlit run dashboard.py
+```
+
+### BGR data download (Calbuco 2015 case)
+
+```bash
+pip install requests
+# Download bulletins for IS02, IS08, IS13, IS14, IS41 — years 2015 and 2022
+python scripts/download_bgr.py
+
+# Custom selection
+python scripts/download_bgr.py --stations IS02 IS41 --years 2015 --output data/bulletins
+
+# Show manual download instructions if automatic download fails
+python scripts/download_bgr.py --instructions
+```
+
+Files are saved as `IS##_YYYY_hf_1-3Hz_5min.nc`, matching the naming convention expected by openVIS. If the automatic download fails (the BGR geoportal requires browser-based access), the script prints step-by-step manual instructions.
+
+### Adaptation roadmap
+
+| Component | Status |
+|-----------|--------|
+| Interactive dashboard (Streamlit) | Done |
+| Papers review and OVDAS gap analysis | Done |
+| BGR bulletin downloader script | Done |
+| Calbuco 2015 case study | In progress |
+| Local PMCC data adapter (OVDAS format) | Planned |
+| Real-time ingestion module | Planned |
+| Alert system (SMS/email) | Planned |
+| PostgreSQL results database | Planned |
+
+---
+
 ## Goal
 
 The Volcanic Information System (VIS) is a long-range (>250 km) detection and characterization infrasound-based methodology.
