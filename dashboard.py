@@ -1,5 +1,5 @@
 """
-OpenVIS Dashboard - OVDAS
+OpenVIS Dashboard - Southern Andes
 Uso: cd openVIS-code && streamlit run dashboard.py
 Requiere: pip install streamlit plotly pandas
 """
@@ -66,7 +66,7 @@ def load_stations():
     return pd.read_csv(os.path.join(CFG_DIR, "stations.csv"))
 
 # ---- Sidebar ----
-st.sidebar.title("OpenVIS - OVDAS")
+st.sidebar.title("OpenVIS - Southern Andes")
 runs = list_runs()
 if not runs:
     st.error("Sin resultados en examples/results/")
