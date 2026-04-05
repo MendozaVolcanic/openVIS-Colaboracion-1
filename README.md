@@ -6,20 +6,19 @@ _Workflow of the VIS methodology. Figure from [De Negri et al. (2026, in review)
 
 ---
 
-## OVDAS Adaptation — Observatorio Volcanológico de los Andes del Sur
+## Southern Andes Case Study — Personal Exploration
 
 > **Fork:** [MendozaVolcanic/openVIS-Colaboracion-1](https://github.com/MendozaVolcanic/openVIS-Colaboracion-1)
-> **Institution:** OVDAS, SERNAGEOMIN, Chile
-> **Contact:** Nicolás Mendoza — OVDAS
+> **Contact:** Nicolás Mendoza — Chile
 
-This fork adapts openVIS for operational volcano monitoring at OVDAS (Observatorio Volcanológico de los Andes del Sur, SERNAGEOMIN, Chile), the volcanic monitoring network responsible for the Southern Andes volcanic arc.
+This fork is a personal exploration of openVIS applied to the Southern Andes volcanic arc, focusing on Chilean volcanoes monitored by IMS stations at shorter distances (100–500 km) than the global range studied in the published literature (500–2000 km).
 
-### What we have done
+### What has been done
 
 - **Interactive dashboard** (`dashboard.py`): Streamlit + Plotly app for exploring VIS results — time series of IP by station, IMS station network map, eruption table with confidence levels, per-station statistics, and configurable filters (date range, IP threshold, stations). [![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://share.streamlit.io/mendozavolcanic/openvis-colaboracion-1/main/dashboard.py)
 - **BGR bulletin downloader** (`scripts/download_bgr.py`): Python script to fetch IMS open-access NetCDF bulletins (Hupe et al., 2022) for selected stations and years — preconfigured for the 2015 Calbuco eruption (IS02, IS08, IS13, IS14, IS41).
-- **Papers review**: Technical summaries of all key references (Marchetti 2019, Ripepe 2018, De Negri & Matoza 2023, Le Pichon 2012, Gheri 2025, and others) with operational implications for OVDAS monitoring distances (100–500 km vs. global 500–2000 km range in published studies).
-- **OVDAS adaptation roadmap**: Gap analysis identifying missing components (real-time ingestion, local PMCC adapter, alert system, database).
+- **Papers review**: Technical summaries of all key references (Marchetti 2019, Ripepe 2018, De Negri & Matoza 2023, Le Pichon 2012, Gheri 2025, and others) with notes on their relevance for shorter-range Southern Andes scenarios.
+- **Southern Andes roadmap**: Gap analysis for adapting VIS to shorter-range monitoring — real-time ingestion, local PMCC data, alert thresholds recalibration.
 
 ### Dashboard
 
@@ -54,10 +53,10 @@ Files are saved as `IS##_YYYY_hf_1-3Hz_5min.nc`, matching the naming convention 
 | Component | Status |
 |-----------|--------|
 | Interactive dashboard (Streamlit) | Done |
-| Papers review and OVDAS gap analysis | Done |
+| Papers review and gap analysis | Done |
 | BGR bulletin downloader script | Done |
 | Calbuco 2015 case study | In progress |
-| Local PMCC data adapter (OVDAS format) | Planned |
+| Local PMCC data adapter | Planned |
 | Real-time ingestion module | Planned |
 | Alert system (SMS/email) | Planned |
 | PostgreSQL results database | Planned |
