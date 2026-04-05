@@ -1,0 +1,55 @@
+### This is a configuration file for the VIS system ###
+
+[DATES]
+# Assumed as UTC time
+StartDate = 2011-01-01T00:00:00
+EndDate = 2012-01-01T00:00:00
+
+[VOLCANOES]
+VolcanoesTable = 'volcanoes.csv'
+# If Area is defined, Regions and Volcanoes are not used. 
+# Regions and Volcanoes can be both used at the same time.
+# The names and codes of the volcanoes are defined in cfg/volcanoes.csv
+# [[Lat1, Lon1], [Lat2, Lon2]] as lower left and upper right coordinates
+# or []
+Area = []
+# [[Volc1, Volc2], [Volc3, Volc4, Volc5],...] by name or code (exclusive)
+# or []
+Regions = []
+# [Volc1, Volc2, ...] by name or code (exclusive) | []
+VolcanoesList = ['Puyehue-Cordon Caulle']
+
+[STATIONS]
+# Stations by name as defined in cfg/network.csv
+StationList = ['I02AR', 'I08BO', 'I41PY']
+StationsTable = 'stations.csv'
+
+[PATHS]
+VeffRatios        = './examples/veffrat'
+Bulletins         = './examples/bulletins'
+BackAziInterp     = './examples/interpolations'
+CompiledData      = './examples/compiled_data'
+Results           = './examples/results'
+
+[FORMATS]
+VeffFormat        = 'BGR' # options: BGR, CLIM, or false if not used
+
+[PROCESSING]
+# Minimum duration in seconds to send a notification. Every time the eruption
+# lasts longer than this value, it increases the 'revision' value by 1.
+# NOTE: sending a notification is not implemented in this version.
+WindowLength = 7200  # [s]
+Timeshift    = 300  # [s]
+PersistencyThreshold = 33  # % of WindowLength
+Dazim        = 3  # deg
+ForceDazim   = true  # Force Dazim around interpolations instead of NumBazStd
+MaxDist      = 5000  # km
+MaxAmp       = 500  # [Pa]
+IPThreshold  = 100
+NotificationInterval = 10800  # [s]
+DeltaClose   = 21600  # [s]
+NumBazStd    = 2
+StaCloseConfidence = 500  # [km]
+MinMeanFreq = 1.0  # [Hz]
+MaxMeanFreq = 3.0
+RefSpeed =  0.30  # [km/s]

@@ -1,0 +1,8 @@
+# Archivos de datos pesados — no commitear
+bulletins/*.nc
+compiled/
+veffrat/
+
+# Mantener resultados (pkl son pequeños, necesarios para el dashboard)
+!results/
+!results/**
