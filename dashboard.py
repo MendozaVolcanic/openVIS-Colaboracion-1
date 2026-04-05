@@ -87,7 +87,7 @@ dmax = ip_df["Datetime (UTC)"].max().date()
 
 st.sidebar.divider()
 dr = st.sidebar.date_input("Rango fechas",
-    value=(datetime(2011,5,1).date(), datetime(2011,9,30).date()),
+    value=(dmin, dmax),
     min_value=dmin, max_value=dmax)
 ip_min  = st.sidebar.slider("IP minimo", 0, 500, 1)
 ip_thr  = st.sidebar.slider("Umbral erupcion", 0, 500, 100)
