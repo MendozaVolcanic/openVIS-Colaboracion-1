@@ -9,22 +9,57 @@ import plotly.express as px
 import streamlit as st
 from datetime import datetime
 
-st.set_page_config(page_title="OpenVIS - OVDAS", page_icon="V", layout="wide")
+st.set_page_config(page_title="OpenVIS - Southern Andes", page_icon="🌋", layout="wide")
 
-RESULTS_DIR = os.path.join(os.path.dirname(__file__), "examples", "results")
-CFG_DIR     = os.path.join(os.path.dirname(__file__), "cfg")
-CONF_COLORS = {1: "#f4d03f", 2: "#e67e22", 3: "#c0392b"}
+BASE_DIR     = os.path.dirname(__file__)
+CFG_DIR      = os.path.join(BASE_DIR, "cfg")
+CONF_COLORS  = {1: "#f4d03f", 2: "#e67e22", 3: "#c0392b"}
+
+# Escanea todas las carpetas de resultados (ejemplos + runs propios)
+RESULT_ROOTS = [
+    os.path.join(BASE_DIR, "data", "results"),
+    os.path.join(BASE_DIR, "examples", "results"),
+]
 
 def list_runs():
-    return sorted([d for d in os.listdir(RESULTS_DIR)
-                   if os.path.isdir(os.path.join(RESULTS_DIR, d))], reverse=True)
+    runs = []
+    for root in RESULT_ROOTS:
+        if not os.path.isdir(root):
+            continue
+        for d in os.listdir(root):
+            full = os.path.join(root, d)
+            if os.path.isdir(full) and os.path.exists(os.path.join(full, "ip_results.pkl")):
+                runs.append(os.path.join(root, d))
+    return sorted(runs, reverse=True)
 
 @st.cache_data
-def load_run(run):
-    b = os.path.join(RESULTS_DIR, run)
-    return (pd.read_pickle(os.path.join(b, "ip_results.pkl")),
-            pd.read_pickle(os.path.join(b, "eruption_results.pkl")),
-            pd.read_pickle(os.path.join(b, "assoc_sta_er.pkl")))
+def load_run(run_path):
+    # pkl es el formato interno de openVIS
+    return (pd.read_pickle(os.path.join(run_path, "ip_results.pkl")),
+            pd.read_pickle(os.path.join(run_path, "eruption_results.pkl")),
+            pd.read_pickle(os.path.join(run_path, "assoc_sta_er.pkl")))
+
+@st.cache_data
+def load_run_meta(run_path):
+    """Lee el .toml del run para obtener volcán y coordenadas."""
+    import glob, toml
+    tomls = glob.glob(os.path.join(run_path, "*.toml"))
+    if not tomls:
+        return {"volcano": "Desconocido", "lat": -40.59, "lon": -72.12}
+    try:
+        cfg   = toml.load(tomls[0])
+        volcs = cfg.get("VOLCANOES", {}).get("VolcanoesList", [])
+        name  = volcs[0] if volcs else "Desconocido"
+        vcfg  = pd.read_csv(os.path.join(CFG_DIR, "volcanoes.csv"),
+                            sep=";", encoding="latin-1", decimal=",")
+        row   = vcfg[vcfg["Volcano Name"] == name]
+        if not row.empty:
+            return {"volcano": name,
+                    "lat": float(str(row.iloc[0]["Latitude"]).replace(",",".")),
+                    "lon": float(str(row.iloc[0]["Longitude"]).replace(",","."))}
+    except Exception:
+        pass
+    return {"volcano": "Desconocido", "lat": -40.59, "lon": -72.12}
 
 @st.cache_data
 def load_stations():
@@ -37,8 +72,10 @@ if not runs:
     st.error("Sin resultados en examples/results/")
     st.stop()
 
-sel_run = st.sidebar.selectbox("Ejecucion", runs)
+run_labels = {r: os.path.basename(r) for r in runs}
+sel_run = st.sidebar.selectbox("Ejecucion", runs, format_func=lambda r: os.path.basename(r))
 ip_df, er_df, sa_df = load_run(sel_run)
+run_meta = load_run_meta(sel_run)
 sta_cfg = load_stations()
 
 ip_df["Datetime (UTC)"]   = pd.to_datetime(ip_df["Datetime (UTC)"], utc=True)
@@ -65,8 +102,8 @@ ipf = ip_df[(ip_df["Datetime (UTC)"]>=d0)&(ip_df["Datetime (UTC)"]<=d1)
 erf = er_df[(er_df["Start Date (UTC)"]>=d0)&(er_df["End Date (UTC)"]<=d1)].copy()
 
 # ---- Header ----
-st.title("OpenVIS - Dashboard OVDAS")
-st.caption(f"Ejecucion: {sel_run} | Periodo: {d0.date()} a {d1.date()} | Datos ejemplo: Puyehue-Cordon Caulle 2011")
+st.title("OpenVIS — Southern Andes Case Study")
+st.caption(f"Ejecucion: {os.path.basename(sel_run)} | Volcan: {run_meta['volcano']} | Periodo: {d0.date()} a {d1.date()}")
 
 # ---- KPIs ----
 c1,c2,c3,c4 = st.columns(4)
@@ -121,15 +158,15 @@ with cm:
         nd = int(ipf[ipf["Station Name"]==r["Station Name"]]["Number of Detections"].sum())
         mrows.append(dict(Nombre=r["Station Name"],Lat=r["Latitude"],Lon=r["Longitude"],
                           Tipo="Estacion IMS",Detecciones=nd))
-    mrows.append(dict(Nombre="Puyehue-Cordon Caulle",Lat=-40.59,Lon=-72.12,
-                      Tipo="Volcan",Detecciones=0))
+    mrows.append(dict(Nombre=run_meta["volcano"], Lat=run_meta["lat"], Lon=run_meta["lon"],
+                      Tipo="Volcan", Detecciones=0))
     mdf = pd.DataFrame(mrows)
     fmap = px.scatter_mapbox(mdf,lat="Lat",lon="Lon",color="Tipo",
         color_discrete_map={"Estacion IMS":"#2196F3","Volcan":"#FF5722"},
         size=[20 if t=="Volcan" else 14 for t in mdf["Tipo"]],
         hover_name="Nombre", hover_data={"Detecciones":True,"Tipo":False,"Lat":False,"Lon":False},
         mapbox_style="carto-positron", zoom=2.5,
-        center={"lat":-35,"lon":-65}, height=380)
+        center={"lat": run_meta["lat"], "lon": run_meta["lon"]}, height=380)
     fmap.update_layout(margin=dict(l=0,r=0,t=0,b=0),
                        legend=dict(orientation="h",y=1.05))
     st.plotly_chart(fmap, use_container_width=True)
@@ -162,4 +199,4 @@ for s in stas:
 if rows: st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
 
 st.divider()
-st.caption("openVIS (De Negri et al.) | MendozaVolcanic/openVIS | OVDAS/SERNAGEOMIN Chile")
+st.caption("openVIS (De Negri et al.) | Fork: MendozaVolcanic/openVIS-Colaboracion-1 | Exploración personal — N. Mendoza, Chile")
