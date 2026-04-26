@@ -25,12 +25,13 @@ Esto cuestiona la noción de "long-range only" — para el sur de Chile estamos 
 
 ## 2. Casos de estudio ejecutados
 
-| Caso | Año | Estaciones detectoras | IP_max | TP_pct | Veff |
-|------|------|----------------------|--------|--------|------|
-| Puyehue-Cordón Caulle | 2011 | I41PY, I02AR, I08BO | 24 999 | 98.3% | BGR |
-| Calbuco | 2015 | I08BO (+ I14CL con Dazim=10°) | 7 463 | 92.1% | =1 |
-| Villarrica | 2015 | I02AR, I08BO | 9 768 | **0%** ⚠️ | =1 |
-| Chaitén | 2008 | I41PY | 764 | 100% | =1 |
+| Caso | Año | VEI | Estaciones detectoras | IP_max | TP_pct | Veff |
+|------|------|-----|----------------------|--------|--------|------|
+| Puyehue-Cordón Caulle | 2011 | 5 | I41PY, I02AR, I08BO | 24 999 | 98.3% | BGR |
+| Calbuco | 2015 | 4 | I08BO (+ I14CL con Dazim=10°) | 7 463 | 92.1% | =1 |
+| Chaitén | 2008 | 4 | I41PY | 764 | 100% | =1 |
+| Villarrica | 2015 | 3 | "I02AR, I08BO" (cross-contamination) | — | **0%** ⚠️ | =1 |
+| **Hudson, Cerro** | 2011 | 1-2 | **ninguna** | 0 | — | BGR |
 
 ---
 
@@ -71,6 +72,36 @@ documentados (SERNAGEOMIN, GVP).
 catálogos primarios** — útil para revisión retrospectiva.
 
 📁 `data/results/20260426T015621/`
+
+---
+
+## 4b. Caso Hudson 2011 — umbral mínimo de detectabilidad
+
+Hudson, Cerro tuvo una pequeña erupción **VEI 1-2 el 26-27 oct 2011**
+(columna ~5 km, ceniza limitada). Es el volcán **más al sur** del catálogo
+chileno con erupción reciente, y la estación más cercana es:
+
+- I02AR (Tierra del Fuego, ~1100 km)
+- I14CL (Juan Fernández, ~860 km)
+
+VIS se ejecutó con la **misma configuración de gold standard** (Puyehue 2011):
+- veff = BGR (corrección estratosférica)
+- 5 estaciones IMS sudamericanas
+- Dazim = 5°, Window = 7200 s
+
+**Resultado: 0 detecciones, 0 períodos eruptivos, IP_max = 0.**
+
+**Implicancia:** define empíricamente el **umbral mínimo de detectabilidad**
+del método VIS para condiciones sudamericanas. Erupciones VEI 1-2 a >850 km
+caen **bajo el ruido de fondo** de la red IMS, incluso con corrección
+estratosférica completa.
+
+Esto coincide con lo esperado por el modelo de atenuación de Le Pichon
+et al. (2012): la amplitud relativa cae como ~1/√d con la distancia, y
+una erupción VEI 1-2 (energía total ~1-2 órdenes de magnitud menor que
+una VEI 4) no sobrevive el viaje.
+
+📁 `data/results/20260426T065306/`
 
 ---
 
