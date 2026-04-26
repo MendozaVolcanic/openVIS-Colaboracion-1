@@ -45,6 +45,17 @@ KNOWN_ERUPTIONS = {
 CONF_COLORS = {1: "#f4d03f", 2: "#e67e22", 3: "#c0392b"}
 CONF_LABELS = {1: "Baja (1 estación)", 2: "Media (2 estaciones)", 3: "Alta (≥3 estaciones)"}
 
+# Conocimiento volcanológico — VEI documentado (catálogo GVP / SERNAGEOMIN)
+KNOWN_VEI = {
+    "Puyehue-Cordon Caulle": 5,
+    "Calbuco":               4,
+    "Chaiten":               4,
+    "Chaiten ":              4,
+    "Hudson. Cerro":         2,
+    "Hudson, Cerro":         2,
+    "Villarrica":            3,
+}
+
 # ---------------------------------------------------------------------------
 # FUNCIONES
 # ---------------------------------------------------------------------------
@@ -105,6 +116,45 @@ def load_run(run_path):
 @st.cache_data
 def load_stations():
     return pd.read_csv(os.path.join(CFG_DIR, "stations.csv"))
+
+
+def classify_run(ip_df, volcano_name, ip_thr=100):
+    """Clasifica un run en DETECTADO / CROSS-CONTAMINATION / NO DETECTADO
+    contra el catálogo KNOWN_ERUPTIONS (con padding de ±24h)."""
+    pad = pd.Timedelta(hours=24)
+    sig = ip_df[ip_df["IP"] >= ip_thr]
+    if sig.empty:
+        return "NO_DETECTADO", "❌", "#cccccc", \
+               f"VIS no detectó actividad infrasónica (IP ≥ {ip_thr}) " \
+               f"en este período. Útil como umbral inferior del método."
+    own = KNOWN_ERUPTIONS.get(volcano_name, [])
+    own_windows = [pd.Timestamp(e["fecha"], tz="UTC") for e in own]
+    in_own = sig["Datetime (UTC)"].apply(
+        lambda t: any(abs((t - w).total_seconds()) < pad.total_seconds() * 7 for w in own_windows)
+    ).sum() if own_windows else 0
+    cross_count = 0
+    cross_targets = set()
+    for other_volc, evs in KNOWN_ERUPTIONS.items():
+        if other_volc == volcano_name: continue
+        for ev in evs:
+            w = pd.Timestamp(ev["fecha"], tz="UTC")
+            mask = (sig["Datetime (UTC)"] - w).abs() < pad
+            if mask.any():
+                cross_count += int(mask.sum())
+                cross_targets.add(other_volc)
+    total = len(sig)
+    if total > 0 and cross_count / total > 0.5:
+        return "CROSS", "⚠️", "#e67e22", \
+               f"**Posible contaminación cruzada** con {', '.join(cross_targets)}. " \
+               f"{cross_count}/{total} ventanas IP≥{ip_thr} caen en la fecha de erupción " \
+               f"de otro volcán cercano (mismo azimut desde la estación detectora)."
+    if in_own > 0:
+        return "DETECTADO", "✅", "#2ecc71", \
+               f"Erupción detectada: {in_own}/{total} ventanas IP≥{ip_thr} dentro de la " \
+               f"ventana eruptiva conocida del catálogo GVP."
+    return "DETECTADO_INDIRECTO", "🔍", "#3498db", \
+           f"{total} ventanas IP≥{ip_thr} encontradas, sin coincidencia con catálogo principal. " \
+           f"Posible actividad secundaria o no documentada — revisar manualmente."
 
 
 def list_runs():
@@ -217,6 +267,21 @@ st.title(f"🌋 {meta['volcano']} — Detección infrasónica de largo alcance")
 st.markdown(
     f"Análisis con **openVIS** · Red IMS · Datos BGR (Hupe et al., 2022) · "
     f"Período: **{d0.date()}** a **{d1.date()}**"
+)
+
+# Banner de estado (idea #3) — clasifica el run en DETECTADO/CROSS/NO
+status, icon, color, msg = classify_run(ipf, meta["volcano"], ip_thr)
+st.markdown(
+    f"""
+    <div style="background:{color}22; border-left:5px solid {color};
+                padding:12px 18px; border-radius:6px; margin:10px 0;">
+        <div style="font-size:1.2em; font-weight:600; color:{color};">
+            {icon} Estado del análisis: {status.replace('_', ' ')}
+        </div>
+        <div style="margin-top:6px; color:#444;">{msg}</div>
+    </div>
+    """,
+    unsafe_allow_html=True,
 )
 
 # KPIs
@@ -459,6 +524,218 @@ for s in stas:
 if rows:
     st.dataframe(pd.DataFrame(rows).sort_values("Distancia (km)"),
                  use_container_width=True, hide_index=True)
+
+# ---------------------------------------------------------------------------
+# ANÁLISIS AVANZADO (ideas #9, #10, #12, #14)
+# ---------------------------------------------------------------------------
+st.divider()
+st.subheader("🔬 Análisis avanzado")
+st.caption(
+    "Vistas complementarias para inspección detallada: panorámica temporal, "
+    "distribución de IP, geometría de detección y comparación entre casos de estudio."
+)
+
+tab_heat, tab_hist, tab_bear, tab_vei = st.tabs([
+    "🌡️ Heatmap tiempo-estación",
+    "📊 Histograma de IP",
+    "🧭 Diagrama de azimutes",
+    "📈 VEI vs IP máx (todos los runs)",
+])
+
+# --- IDEA #10: Heatmap único tiempo-estación ---
+with tab_heat:
+    st.caption(
+        "Una sola vista panorámica: filas = estaciones, columnas = tiempo, color = log(IP). "
+        "Permite detectar pulsos eruptivos que reaparecen en distintas estaciones."
+    )
+    if ipf.empty:
+        st.info("Sin datos en el rango actual.")
+    else:
+        hm = ipf.copy()
+        hm["t_bin"] = hm["Datetime (UTC)"].dt.floor("6h")
+        pivot = hm.pivot_table(index="Station Name", columns="t_bin", values="IP", aggfunc="max")
+        pivot = pivot.reindex(sorted(pivot.index, key=lambda s: -haversine_km(
+            meta["lat"], meta["lon"],
+            float(sta_cfg[sta_cfg["Station Name"]==s]["Latitude"].values[0]) if not sta_cfg[sta_cfg["Station Name"]==s].empty else 0,
+            float(sta_cfg[sta_cfg["Station Name"]==s]["Longitude"].values[0]) if not sta_cfg[sta_cfg["Station Name"]==s].empty else 0,
+        )))
+        z = np.log10(pivot.values.astype(float).clip(min=0.1))
+        fig_hm = go.Figure(data=go.Heatmap(
+            z=z, x=pivot.columns, y=pivot.index,
+            colorscale="Inferno",
+            colorbar=dict(title="log₁₀(IP)"),
+            hovertemplate="%{y}<br>%{x|%Y-%m-%d %H:%M}<br>log(IP)=%{z:.2f}<extra></extra>",
+            zmin=0, zmax=4,
+        ))
+        # Línea dorada en fechas conocidas
+        for ev in KNOWN_ERUPTIONS.get(meta["volcano"], []):
+            fig_hm.add_vline(x=pd.Timestamp(ev["fecha"], tz="UTC").value / 1e6,
+                             line_color="gold", line_width=2, line_dash="dot")
+        fig_hm.update_layout(height=320, margin=dict(l=10, r=10, t=10, b=10),
+                             xaxis_title="Fecha (UTC)", yaxis_title="Estación (lejos→cerca)")
+        st.plotly_chart(fig_hm, use_container_width=True)
+
+# --- IDEA #12: Histograma log(IP) ---
+with tab_hist:
+    st.caption(
+        "Distribución logarítmica de los valores de IP. "
+        "El umbral IP=100 (línea roja) separa ruido de fondo de detecciones significativas. "
+        "Una cola larga a la derecha indica eventos eruptivos en el período."
+    )
+    ip_all = ip_df[ip_df["IP"] >= 1]["IP"].values
+    if len(ip_all) == 0:
+        st.info("Sin datos.")
+    else:
+        fig_h = go.Figure()
+        fig_h.add_trace(go.Histogram(
+            x=np.log10(ip_all), nbinsx=40,
+            marker_color="#3498db", marker_line_color="white", marker_line_width=0.5,
+            name="Todas las ventanas",
+        ))
+        fig_h.add_vline(x=np.log10(ip_thr), line_color="red", line_dash="dash", line_width=2,
+                        annotation_text=f"Umbral IP={ip_thr}", annotation_position="top right",
+                        annotation_font_color="red")
+        n_below = int((ip_all < ip_thr).sum())
+        n_above = int((ip_all >= ip_thr).sum())
+        fig_h.update_layout(
+            height=320, margin=dict(l=10, r=10, t=30, b=10),
+            xaxis_title="log₁₀(IP)", yaxis_title="N° de ventanas (2h)",
+            title=f"Bajo umbral: {n_below}  ·  Sobre umbral: {n_above}  "
+                  f"({100*n_above/(n_below+n_above):.1f}% señal)",
+            plot_bgcolor="#fafafa",
+        )
+        st.plotly_chart(fig_h, use_container_width=True)
+
+# --- IDEA #9: Diagrama de azimutes (cross-contamination) ---
+with tab_bear:
+    st.caption(
+        "Para cada estación IMS detectora, muestra el **bearing geométrico** hacia el volcán "
+        "objetivo (rojo) y hacia los volcanes vecinos del catálogo Smithsonian (gris). "
+        "Cuando dos volcanes caen dentro del mismo cono de tolerancia Dazim, "
+        "una erupción de uno puede atribuirse al otro (cross-contamination)."
+    )
+    def bearing_deg(lat1, lon1, lat2, lon2):
+        p1, p2 = math.radians(lat1), math.radians(lat2)
+        dl = math.radians(lon2 - lon1)
+        x = math.sin(dl) * math.cos(p2)
+        y = math.cos(p1)*math.sin(p2) - math.sin(p1)*math.cos(p2)*math.cos(dl)
+        return (math.degrees(math.atan2(x, y)) + 360) % 360
+
+    try:
+        volc_all = pd.read_csv(os.path.join(CFG_DIR, "volcanoes.csv"),
+                               sep=";", encoding="latin-1", decimal=",")
+        # Volcanes chilenos cercanos (radio 800 km del objetivo)
+        nearby = []
+        for _, vr in volc_all[volc_all["Country"]=="Chile"].iterrows():
+            try:
+                vlat = float(str(vr["Latitude"]).replace(",","."))
+                vlon = float(str(vr["Longitude"]).replace(",","."))
+            except Exception: continue
+            d = haversine_km(meta["lat"], meta["lon"], vlat, vlon)
+            if 5 < d < 800:
+                nearby.append((vr["Volcano Name"], vlat, vlon, d))
+
+        dazim = float(meta["dazim"]) if str(meta["dazim"]).replace(".","").isdigit() else 5
+        active_stas = [s for s in stas if not sta_cfg[sta_cfg["Station Name"]==s].empty]
+        n = len(active_stas)
+        if n == 0:
+            st.info("Sin estaciones activas.")
+        else:
+            fig_b = go.Figure()
+            for i, s in enumerate(active_stas):
+                row_s = sta_cfg[sta_cfg["Station Name"]==s].iloc[0]
+                slat, slon = float(row_s["Latitude"]), float(row_s["Longitude"])
+                target_baz = bearing_deg(slat, slon, meta["lat"], meta["lon"])
+                # Cono de tolerancia Dazim
+                fig_b.add_trace(go.Barpolar(
+                    r=[1], theta=[target_baz], width=[2*dazim],
+                    marker_color=f"rgba(231,76,60,0.25)",
+                    name=f"{s}: cono ±{dazim}°", showlegend=(i==0),
+                ))
+                # Bearing al objetivo
+                fig_b.add_trace(go.Scatterpolar(
+                    r=[0,1], theta=[target_baz, target_baz], mode="lines+markers",
+                    line=dict(color="#c0392b", width=2),
+                    marker=dict(size=[0,8], color="#c0392b"),
+                    name=f"{s} → {meta['volcano']}", showlegend=False,
+                    hovertemplate=f"{s} → {meta['volcano']}<br>Bearing: {target_baz:.1f}°<extra></extra>",
+                ))
+                # Bearings a vecinos
+                for nm, nlat, nlon, nd in nearby:
+                    nbaz = bearing_deg(slat, slon, nlat, nlon)
+                    diff = abs((nbaz - target_baz + 180) % 360 - 180)
+                    if diff < 30:  # solo mostrar los azimutalmente cercanos
+                        col = "#e67e22" if diff < dazim else "#888"
+                        fig_b.add_trace(go.Scatterpolar(
+                            r=[0,0.7], theta=[nbaz, nbaz], mode="lines",
+                            line=dict(color=col, width=1.2, dash="dot"),
+                            opacity=0.6, showlegend=False,
+                            hovertemplate=f"{s} → {nm} ({nd:.0f} km)<br>Bearing: {nbaz:.1f}°<br>Δ azimut: {diff:.1f}°<extra></extra>",
+                        ))
+            fig_b.update_layout(
+                height=480,
+                polar=dict(
+                    radialaxis=dict(visible=False, range=[0,1]),
+                    angularaxis=dict(direction="clockwise", rotation=90, tickmode="array",
+                                     tickvals=[0,90,180,270],
+                                     ticktext=["N","E","S","W"]),
+                ),
+                title=f"Bearings desde estaciones IMS hacia {meta['volcano']} (rojo) "
+                      f"y volcanes vecinos (naranja=dentro de Dazim, gris=fuera)",
+                margin=dict(l=20, r=20, t=60, b=20),
+            )
+            st.plotly_chart(fig_b, use_container_width=True)
+    except Exception as e:
+        st.warning(f"No se pudo generar el diagrama: {e}")
+
+# --- IDEA #14: VEI vs IP_max ---
+with tab_vei:
+    st.caption(
+        "Compara los casos de estudio cargados: VEI documentado (catálogo GVP) "
+        "versus IP_máx alcanzado en cada análisis. Permite calibrar empíricamente "
+        "qué magnitud eruptiva es detectable por VIS desde las estaciones IMS sudamericanas."
+    )
+    pts = []
+    for r in runs:
+        m = run_metas[r]
+        try:
+            ip_r, _, _ = load_run(r)
+            vei = KNOWN_VEI.get(m["volcano"])
+            if vei is None: continue
+            pts.append({
+                "Run": m["label"],
+                "Volcano": m["volcano"].replace(".", ","),
+                "VEI": vei,
+                "IP_max": float(ip_r["IP"].max()) if len(ip_r) else 0.0,
+                "Stations": ip_r[ip_r["IP"]>=1]["Station Name"].nunique(),
+            })
+        except Exception: continue
+    if not pts:
+        st.info("Aún no hay suficientes runs cargados.")
+    else:
+        df_v = pd.DataFrame(pts)
+        df_v["IP_plot"] = df_v["IP_max"].clip(lower=0.5)
+        fig_v = go.Figure()
+        fig_v.add_trace(go.Scatter(
+            x=df_v["VEI"], y=df_v["IP_plot"],
+            mode="markers+text",
+            marker=dict(size=14 + df_v["Stations"]*4, color=df_v["VEI"],
+                        colorscale="YlOrRd", line=dict(color="black", width=1)),
+            text=df_v["Volcano"], textposition="top center",
+            textfont=dict(size=10),
+            customdata=np.stack([df_v["IP_max"], df_v["Stations"], df_v["Run"]], axis=-1),
+            hovertemplate="<b>%{customdata[2]}</b><br>VEI: %{x}<br>IP_max: %{customdata[0]:.1f}"
+                          "<br>Estaciones detectoras: %{customdata[1]}<extra></extra>",
+        ))
+        fig_v.add_hline(y=ip_thr, line_dash="dash", line_color="red",
+                        annotation_text=f"Umbral IP={ip_thr}", annotation_position="bottom right")
+        fig_v.update_layout(
+            height=420, margin=dict(l=10, r=10, t=10, b=10),
+            xaxis=dict(title="VEI documentado", dtick=1, range=[0.5, 6]),
+            yaxis=dict(title="IP máximo alcanzado", type="log"),
+            plot_bgcolor="#fafafa",
+        )
+        st.plotly_chart(fig_v, use_container_width=True)
 
 # ---------------------------------------------------------------------------
 # PIE DE PÁGINA
