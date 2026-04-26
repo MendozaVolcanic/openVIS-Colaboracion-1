@@ -1,6 +1,17 @@
 # openVIS
 Open source implementation of the Volcanic Information System methodology
 
+---
+
+## 🌋 Live Dashboard — Southern Andes Case Study
+
+[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://share.streamlit.io/mendozavolcanic/openvis-colaboracion-1/main/dashboard.py)
+
+> Explore VIS results interactively for Calbuco 2015, Villarrica 2015, and Puyehue-Cordón Caulle 2011.
+> IP time series by IMS station · network map with great-circle paths · eruption confidence levels.
+
+---
+
 ![Workflow of the VIS methodology](./figures/vis_diagram.png)
 _Workflow of the VIS methodology. Figure from [De Negri et al. (2026, in review)]()._
 
@@ -8,19 +19,21 @@ _Workflow of the VIS methodology. Figure from [De Negri et al. (2026, in review)
 
 ## Southern Andes Case Study — Personal Exploration
 
-> **Fork:** [MendozaVolcanic/openVIS-Colaboracion-1](https://github.com/MendozaVolcanic/openVIS-Colaboracion-1)
+> **Fork:** [MendozaVolcanic/openVIS-Colaboracion-1](https://github.com/MendozaVolcanic/openVIS-Colaboracion-1)  
 > **Contact:** Nicolás Mendoza — Chile
 
 This fork is a personal exploration of openVIS applied to the Southern Andes volcanic arc, focusing on Chilean volcanoes monitored by IMS stations at shorter distances (100–500 km) than the global range studied in the published literature (500–2000 km).
 
 ### What has been done
 
-- **Interactive dashboard** (`dashboard.py`): Streamlit + Plotly app for exploring VIS results — time series of IP by station, IMS station network map, eruption table with confidence levels, per-station statistics, and configurable filters (date range, IP threshold, stations). [![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://share.streamlit.io/mendozavolcanic/openvis-colaboracion-1/main/dashboard.py)
-- **BGR bulletin downloader** (`scripts/download_bgr.py`): Python script to fetch IMS open-access NetCDF bulletins (Hupe et al., 2022) for selected stations and years — preconfigured for the 2015 Calbuco eruption (IS02, IS08, IS13, IS14, IS41).
-- **Papers review**: Technical summaries of all key references (Marchetti 2019, Ripepe 2018, De Negri & Matoza 2023, Le Pichon 2012, Gheri 2025, and others) with notes on their relevance for shorter-range Southern Andes scenarios.
-- **Southern Andes roadmap**: Gap analysis for adapting VIS to shorter-range monitoring — real-time ingestion, local PMCC data, alert thresholds recalibration.
+- **Interactive dashboard** (`dashboard.py`): Streamlit + Plotly app — IP time series per station, IMS network map with great-circle paths to the source volcano, eruption confidence table, known eruption date markers, and per-station statistics. Smart run labels and configurable filters.
+- **Calbuco 2015 case study**: Two VIS runs (Dazim=5° and Dazim=10°) — detected by I08BO (Bolivia, 2821 km) and I14CL (Juan Fernández, 1013 km). IP_max = 7 463.
+- **Villarrica 2015 case study**: VEI-3 sub-Plinian eruption (3 March 2015) — detected by I02AR (Argentina, 1721 km) and I08BO (Bolivia, 2602 km). IP_max = 9 768. 1 eruptive period identified.
+- **Puyehue-Cordón Caulle 2011 case study**: Reference run with veff + ARCADE — 3 stations, IP_max = 24 999, 5 eruptive periods. Replicates De Negri et al. results.
+- **BGR bulletin downloader** (`scripts/download_bgr.py`): Fetch IMS open-access NetCDF bulletins (Hupe et al., 2022) for any station/year combination.
+- **Papers review**: Technical summaries of key references with notes on Southern Andes applicability.
 
-### Dashboard
+### Dashboard — run locally
 
 [![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://share.streamlit.io/mendozavolcanic/openvis-colaboracion-1/main/dashboard.py)
 
@@ -52,14 +65,16 @@ Files are saved as `IS##_YYYY_hf_1-3Hz_5min.nc`, matching the naming convention 
 
 | Component | Status |
 |-----------|--------|
-| Interactive dashboard (Streamlit) | Done |
-| Papers review and gap analysis | Done |
-| BGR bulletin downloader script | Done |
-| Calbuco 2015 case study | In progress |
+| Interactive dashboard (Streamlit + Plotly) | ✅ Done |
+| Papers review and gap analysis | ✅ Done |
+| BGR bulletin downloader script | ✅ Done |
+| Puyehue-Cordón Caulle 2011 (reference case) | ✅ Done |
+| Calbuco 2015 case study | ✅ Done |
+| Villarrica 2015 case study | ✅ Done |
 | Local PMCC data adapter | Planned |
+| veff ratios for 2015 events | Pending (contact De Negri) |
 | Real-time ingestion module | Planned |
 | Alert system (SMS/email) | Planned |
-| PostgreSQL results database | Planned |
 
 ---
 
