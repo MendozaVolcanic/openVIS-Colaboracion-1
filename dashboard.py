@@ -172,6 +172,12 @@ def list_runs():
 # ---------------------------------------------------------------------------
 # SIDEBAR
 # ---------------------------------------------------------------------------
+# Permalink (idea #4): leer query params al inicio
+try:
+    qp = st.query_params
+except Exception:
+    qp = {}
+
 with st.sidebar:
     st.title("🌋 OpenVIS")
     st.caption("Andes del Sur — exploración personal")
@@ -214,9 +220,19 @@ Cuando IP supera **100**, el sistema detecta una posible erupción.
         st.stop()
 
     run_metas = {r: load_run_meta(r) for r in runs}
+
+    # Permalink: si hay ?run=<basename>, intentar pre-seleccionarlo
+    default_run_idx = 0
+    if qp.get("run"):
+        wanted = qp["run"]
+        for i, r in enumerate(runs):
+            if os.path.basename(r) == wanted:
+                default_run_idx = i; break
+
     sel_run = st.selectbox(
         "Ejecución VIS",
         runs,
+        index=default_run_idx,
         format_func=lambda r: run_metas[r]["label"],
         help="Cada ejecución corresponde a un volcán y configuración distintos"
     )
@@ -234,9 +250,39 @@ Cuando IP supera **100**, el sistema detecta una posible erupción.
     dmin = ip_df["Datetime (UTC)"].min().date()
     dmax = ip_df["Datetime (UTC)"].max().date()
 
-    dr = st.date_input("Rango de fechas", value=(dmin, dmax),
+    # Vista evento (idea #2): si hay erupción conocida, ofrecer zoom ±48h
+    known_dates = [pd.Timestamp(e["fecha"]).date() for e in KNOWN_ERUPTIONS.get(meta["volcano"], [])
+                   if dmin <= pd.Timestamp(e["fecha"]).date() <= dmax]
+    view_options = ["Panorámica (todo el período)"]
+    if known_dates:
+        view_options.append(f"Zoom evento (±48 h alrededor de {known_dates[0]})")
+    default_view = qp.get("view", view_options[0])
+    if default_view not in view_options: default_view = view_options[0]
+    view_mode = st.radio("Vista temporal", view_options,
+                          index=view_options.index(default_view),
+                          help="Zoom centra el gráfico en la fecha eruptiva conocida del catálogo GVP")
+
+    from datetime import timedelta as _td
+    if view_mode.startswith("Zoom") and known_dates:
+        ev_date = known_dates[0]
+        suggested = (max(dmin, ev_date - _td(days=2)), min(dmax, ev_date + _td(days=2)))
+    else:
+        suggested = (dmin, dmax)
+
+    # Permalink fechas
+    if qp.get("d0") and qp.get("d1"):
+        try:
+            from datetime import date as _date
+            qd0 = _date.fromisoformat(qp["d0"]); qd1 = _date.fromisoformat(qp["d1"])
+            if dmin <= qd0 <= dmax and dmin <= qd1 <= dmax:
+                suggested = (qd0, qd1)
+        except Exception: pass
+
+    dr = st.date_input("Rango de fechas", value=suggested,
                         min_value=dmin, max_value=dmax)
-    ip_thr = st.slider("Umbral IP (detección)", 0, 500, 100,
+
+    default_ip = int(qp.get("ip", "100")) if str(qp.get("ip", "100")).isdigit() else 100
+    ip_thr = st.slider("Umbral IP (detección)", 0, 500, default_ip,
                         help="IP ≥ 100 indica posible erupción según la metodología VIS")
     stas = st.multiselect(
         "Estaciones IMS",
@@ -249,6 +295,22 @@ Cuando IP supera **100**, el sistema detecta una posible erupción.
     st.caption(f"**Volcán:** {meta['volcano']}")
     st.caption(f"**Período:** {meta['date_start']} → {meta['date_end']}")
     st.caption(f"**Dazim:** {meta['dazim']}° | **veff:** {meta['veff']}")
+
+    # Persistir filtros en query params (permalink, idea #4)
+    try:
+        st.query_params.update({
+            "run":  os.path.basename(sel_run),
+            "d0":   str(dr[0]) if len(dr) >= 1 else str(dmin),
+            "d1":   str(dr[1]) if len(dr) == 2 else str(dmax),
+            "ip":   str(ip_thr),
+            "view": view_mode,
+        })
+    except Exception: pass
+
+    st.divider()
+    st.subheader("📤 Exportar")
+    # NOTA: ipf y erf se calculan más abajo. Aquí preparamos placeholders y los rellenamos al final.
+    export_placeholder = st.empty()
 
 # ---------------------------------------------------------------------------
 # DATOS FILTRADOS
@@ -736,6 +798,74 @@ with tab_vei:
             plot_bgcolor="#fafafa",
         )
         st.plotly_chart(fig_v, use_container_width=True)
+
+# ---------------------------------------------------------------------------
+# EXPORT (idea #5) — rellenar el placeholder del sidebar con datos filtrados
+# ---------------------------------------------------------------------------
+def _build_csv(df):
+    return df.to_csv(index=False).encode("utf-8")
+
+def _build_ical(eruptions, volcano):
+    """Genera un calendario .ics con un VEVENT por período eruptivo VIS."""
+    lines = ["BEGIN:VCALENDAR", "VERSION:2.0",
+             "PRODID:-//openVIS//Southern Andes//ES",
+             "CALSCALE:GREGORIAN", "METHOD:PUBLISH"]
+    for _, e in eruptions.iterrows():
+        t0 = e["Start Date (UTC)"].strftime("%Y%m%dT%H%M%SZ")
+        t1 = e["End Date (UTC)"].strftime("%Y%m%dT%H%M%SZ")
+        uid = f"{e.get('Eruption Code','vis')}-{t0}@openvis"
+        lines += [
+            "BEGIN:VEVENT", f"UID:{uid}",
+            f"DTSTAMP:{t0}", f"DTSTART:{t0}", f"DTEND:{t1}",
+            f"SUMMARY:VIS detection — {volcano}",
+            f"DESCRIPTION:Confidence={e.get('Confidence Level','?')}\\,"
+            f"Amplitude={e.get('Estimated Amplitude [Pa]', '?'):.2f} Pa",
+            "END:VEVENT",
+        ]
+    lines.append("END:VCALENDAR")
+    return "\r\n".join(lines).encode("utf-8")
+
+with st.sidebar:
+    with export_placeholder.container():
+        st.download_button(
+            "⬇️ IP (CSV)",
+            data=_build_csv(ipf),
+            file_name=f"openvis_ip_{meta['volcano'].replace(' ','_')}_{d0.date()}_{d1.date()}.csv",
+            mime="text/csv",
+            help="Todas las ventanas IP≥1 con frecuencia, amplitud, persistencia",
+            use_container_width=True,
+        )
+        st.download_button(
+            "⬇️ Erupciones VIS (CSV)",
+            data=_build_csv(erf) if not erf.empty else b"",
+            file_name=f"openvis_eruptions_{meta['volcano'].replace(' ','_')}_{d0.date()}_{d1.date()}.csv",
+            mime="text/csv", use_container_width=True,
+            disabled=erf.empty,
+        )
+        st.download_button(
+            "📅 Períodos eruptivos (iCal)",
+            data=_build_ical(erf, meta["volcano"]) if not erf.empty else b"",
+            file_name=f"openvis_eruptions_{meta['volcano'].replace(' ','_')}.ics",
+            mime="text/calendar",
+            help="Importa a Google Calendar / Outlook para revisar eventos",
+            use_container_width=True,
+            disabled=erf.empty,
+        )
+
+# ---------------------------------------------------------------------------
+# DOCUMENTACIÓN — idea #19 (lee HALLAZGOS.md y BUGS_FOUND.md)
+# ---------------------------------------------------------------------------
+st.divider()
+with st.expander("📚 Documentación científica del proyecto", expanded=False):
+    doc_tab, bugs_tab = st.tabs(["🔬 Hallazgos científicos", "🐛 Bugs encontrados"])
+    for fname, tab in [("HALLAZGOS.md", doc_tab), ("BUGS_FOUND.md", bugs_tab)]:
+        with tab:
+            fpath = os.path.join(BASE_DIR, fname)
+            if os.path.exists(fpath):
+                with open(fpath, "r", encoding="utf-8") as f:
+                    st.markdown(f.read())
+            else:
+                st.info(f"{fname} no encontrado en el repo.")
 
 # ---------------------------------------------------------------------------
 # PIE DE PÁGINA
