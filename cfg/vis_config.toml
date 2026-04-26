@@ -1,54 +1,40 @@
-### VIS configuration — Calbuco 2015 eruption case study ###
-# Calbuco erupted April 22–23, 2015 (VEI 4, two sub-Plinian phases)
-# Reference: De Negri & Matoza (2023), doi:10.1029/2022JB025735
-
 [DATES]
-# Cover April–May 2015 to capture onset and decay
 StartDate = 2015-04-01T00:00:00
-EndDate   = 2015-06-01T00:00:00
+EndDate = 2015-06-01T00:00:00
 
 [VOLCANOES]
-VolcanoesTable = 'volcanoes.csv'
+VolcanoesTable = "volcanoes.csv"
 Area = []
 Regions = []
-# Calbuco: -41.33, -72.618 — as named in cfg/volcanoes.csv
-VolcanoesList = ['Calbuco']
+VolcanoesList = [ "Calbuco",]
 
 [STATIONS]
-StationsTable = 'stations.csv'
-# South American IMS stations with data in data/bulletins/:
-#   I02AR  Tierra del Fuego, Argentina  (~2000 km from Calbuco)
-#   I08BO  Bolivia                      (~2000 km)
-#   I13CL  Easter Island, Chile         (~3200 km)
-#   I14CL  Juan Fernandez, Chile        (~1000 km — closest)
-#   I41PY  Paraguay                     (~1500 km)
-StationList = ['I02AR', 'I08BO', 'I13CL', 'I14CL', 'I41PY']
+StationsTable = "stations.csv"
+StationList = [ "I02AR", "I08BO", "I13CL", "I14CL", "I41PY",]
 
 [PATHS]
-# No veff-ratio files for 2015 — VIS will assume veff = 1.0 (good ducting)
-VeffRatios    = './data/veffrat'
-Bulletins     = './data/bulletins'
+VeffRatios = "./data/veffrat"
+Bulletins = "./data/bulletins"
 BackAziInterp = false
-CompiledData  = './data/compiled'
-Results       = './data/results'
+CompiledData = "./data/compiled"
+Results = "./data/results"
 
 [FORMATS]
-# false → no veff-ratio files; VIS uses veff = 1.0 for all times
 VeffFormat = false
 
 [PROCESSING]
-WindowLength          = 7200   # [s] 2-hour window
-Timeshift             = 300    # [s] 5-min step
-PersistencyThreshold  = 33     # % of WindowLength
-Dazim                 = 5      # [deg] slightly wider than default (no baz correction)
-ForceDazim            = true
-MaxDist               = 5000   # [km]
-MaxAmp                = 500    # [Pa]
-IPThreshold           = 100
-NotificationInterval  = 10800  # [s]
-DeltaClose            = 21600  # [s]
-NumBazStd             = 2
-StaCloseConfidence    = 500    # [km]
-MinMeanFreq           = 1.0    # [Hz]
-MaxMeanFreq           = 3.0    # [Hz]
-RefSpeed              = 0.30   # [km/s]
+WindowLength = 7200
+Timeshift = 300
+PersistencyThreshold = 33
+Dazim = 15
+ForceDazim = true
+MaxDist = 5000
+MaxAmp = 500
+IPThreshold = 100
+NotificationInterval = 10800
+DeltaClose = 21600
+NumBazStd = 2
+StaCloseConfidence = 500
+MinMeanFreq = 1.0
+MaxMeanFreq = 3.0
+RefSpeed = 0.3

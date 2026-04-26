@@ -26,12 +26,13 @@ This fork is a personal exploration of openVIS applied to the Southern Andes vol
 
 ### What has been done
 
-- **Interactive dashboard** (`dashboard.py`): Streamlit + Plotly app — IP time series per station, IMS network map with great-circle paths to the source volcano, eruption confidence table, known eruption date markers, and per-station statistics. Smart run labels and configurable filters.
-- **Calbuco 2015 case study**: Two VIS runs (Dazim=5° and Dazim=10°) — detected by I08BO (Bolivia, 2821 km) and I14CL (Juan Fernández, 1013 km). IP_max = 7 463.
-- **Villarrica 2015 case study**: VEI-3 sub-Plinian eruption (3 March 2015) — detected by I02AR (Argentina, 1721 km) and I08BO (Bolivia, 2602 km). IP_max = 9 768. 1 eruptive period identified.
-- **Puyehue-Cordón Caulle 2011 case study**: Reference run with veff + ARCADE — 3 stations, IP_max = 24 999, 5 eruptive periods. Replicates De Negri et al. results.
+- **Interactive dashboard** (`dashboard.py`): Streamlit + Plotly — IP time series per station, IMS network map with great-circle paths, eruption confidence table, known eruption date markers, smart run labels.
+- **Four case studies executed**: Puyehue-Cordón Caulle 2011, Calbuco 2015, Villarrica 2015, Chaitén 2008. See [HALLAZGOS.md](./HALLAZGOS.md) for the full scientific summary.
+- **IMS coverage map for Chilean volcanoes** (`scripts/ims_coverage_map.py`): all 67 Chilean volcanoes are within 1500 km of an IMS station — I01AR is **128 km from Puyehue and 182 km from Villarrica**.
+- **Dazim sensitivity sweep** (`scripts/dazim_sweep.py`): systematic test of azimuth tolerance (3°–15°) on Calbuco 2015 — Dazim=5° = best operational tradeoff (1 station, 0 false positives).
+- **False-positive analysis** (`scripts/false_positives.py`): each IP≥100 window classified as TP / FP / cross-contamination. Discovered cross-contamination Calbuco↔Villarrica from I08BO (similar back-azimuth, ~5° apart).
 - **BGR bulletin downloader** (`scripts/download_bgr.py`): Fetch IMS open-access NetCDF bulletins (Hupe et al., 2022) for any station/year combination.
-- **Papers review**: Technical summaries of key references with notes on Southern Andes applicability.
+- **Reproducible quickstart notebook** (`notebooks/01_quickstart.ipynb`): end-to-end pipeline from download to dashboard.
 
 ### Dashboard — run locally
 

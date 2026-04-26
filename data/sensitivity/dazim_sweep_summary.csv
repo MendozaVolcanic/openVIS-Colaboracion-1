@@ -1,0 +1,6 @@
+Dazim,RunID,Stations_active,Eruption_periods,IP_max,N_in_true_window,Stations_in_true_window,False_positive_periods
+3,20260426T015833,0,1,0.0,0,,1
+5,20260426T015909,1,1,7289.9,1,I08BO,0
+7,20260426T015946,2,2,7462.9,1,I08BO,1
+10,20260426T020022,2,2,7462.9,1,I08BO,1
+15,20260426T020057,3,2,11338.8,2,"I02AR,I08BO",1

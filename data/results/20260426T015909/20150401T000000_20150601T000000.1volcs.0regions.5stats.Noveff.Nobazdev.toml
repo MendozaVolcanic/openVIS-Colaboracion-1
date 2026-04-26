@@ -1,0 +1,40 @@
+[DATES]
+StartDate = 2015-04-01T00:00:00
+EndDate = 2015-06-01T00:00:00
+
+[VOLCANOES]
+VolcanoesTable = "volcanoes.csv"
+Area = []
+Regions = []
+VolcanoesList = [ "Calbuco",]
+
+[STATIONS]
+StationsTable = "stations.csv"
+StationList = [ "I02AR", "I08BO", "I13CL", "I14CL", "I41PY",]
+
+[PATHS]
+VeffRatios = "./data/veffrat"
+Bulletins = "./data/bulletins"
+BackAziInterp = false
+CompiledData = "./data/compiled"
+Results = "./data/results"
+
+[FORMATS]
+VeffFormat = false
+
+[PROCESSING]
+WindowLength = 7200
+Timeshift = 300
+PersistencyThreshold = 33
+Dazim = 5
+ForceDazim = true
+MaxDist = 5000
+MaxAmp = 500
+IPThreshold = 100
+NotificationInterval = 10800
+DeltaClose = 21600
+NumBazStd = 2
+StaCloseConfidence = 500
+MinMeanFreq = 1.0
+MaxMeanFreq = 3.0
+RefSpeed = 0.3

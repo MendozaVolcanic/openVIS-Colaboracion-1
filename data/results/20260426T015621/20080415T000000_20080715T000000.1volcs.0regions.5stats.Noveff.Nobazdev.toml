@@ -1,0 +1,45 @@
+### VIS config — Chaitén 2008 eruption ###
+# Chaitén erupted May 2, 2008 — first rhyolitic eruption observed in modern era
+# VEI 4 sub-Plinian, plume up to 19 km, ~5 day intense phase
+# Iconic event for Chilean volcanology — long-dormant volcano (>9000 yr)
+
+[DATES]
+StartDate = 2008-04-15T00:00:00
+EndDate   = 2008-07-15T00:00:00
+
+[VOLCANOES]
+VolcanoesTable = 'volcanoes.csv'
+Area = []
+Regions = []
+VolcanoesList = ['Chaiten']
+
+[STATIONS]
+StationsTable = 'stations.csv'
+StationList = ['I02AR', 'I08BO', 'I13CL', 'I14CL', 'I41PY']
+
+[PATHS]
+VeffRatios    = './data/veffrat'
+Bulletins     = './data/bulletins'
+BackAziInterp = false
+CompiledData  = './data/compiled'
+Results       = './data/results'
+
+[FORMATS]
+VeffFormat = false
+
+[PROCESSING]
+WindowLength          = 7200
+Timeshift             = 300
+PersistencyThreshold  = 33
+Dazim                 = 10
+ForceDazim            = true
+MaxDist               = 5000
+MaxAmp                = 500
+IPThreshold           = 100
+NotificationInterval  = 10800
+DeltaClose            = 21600
+NumBazStd             = 2
+StaCloseConfidence    = 500
+MinMeanFreq           = 1.0
+MaxMeanFreq           = 3.0
+RefSpeed              = 0.30
